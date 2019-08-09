@@ -2,6 +2,7 @@ package com.example.redditsample
 
 import android.content.Context
 import com.example.redditsample.adapter.RedditListAdapter
+import com.example.redditsample.manager.ConnectivityManager
 import com.example.redditsample.manager.RetrofitManager
 import com.example.redditsample.response.RedditResponse
 import com.example.redditsample.service.RedditService
@@ -35,6 +36,7 @@ class MainViewModelTest {
     val redditService = mockk<RedditService>()
     val redditResponse = mockk<RedditResponse>()
     val compositeDisposable = mockk<CompositeDisposable>()
+    val connectivityManager = mockk<ConnectivityManager>(relaxed = true)
 
     lateinit var subject: MainViewModel
 
@@ -42,11 +44,13 @@ class MainViewModelTest {
     fun setUp() {
         RxAndroidPlugins.setInitMainThreadSchedulerHandler { scheduler -> Schedulers.trampoline() }
         MockKAnnotations.init( this )
-        subject = MainViewModel(context, redditListAdapter, compositeDisposable)
+        every { connectivityManager.isConnectedToInternet(any()) } returns true
+
+        subject = MainViewModel(context, redditListAdapter, compositeDisposable, connectivityManager)
     }
 
     @Test
-    fun addition_isCorrect() {
+    fun connectedToInternet_addsCallToCompositeDisposable() {
         every { retrofitManager.getRetrofitBuilderService(any(), any()) } returns anyClassMock
         every { redditService.getTop(any()) } returns Single.just(redditResponse)
         every { compositeDisposable.add(any()) } returns true
