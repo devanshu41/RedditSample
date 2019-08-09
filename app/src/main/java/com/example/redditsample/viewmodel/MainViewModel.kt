@@ -6,7 +6,9 @@ import android.content.ContentValues.TAG
 import android.content.Context
 import android.databinding.BaseObservable
 import android.util.Log
+import android.widget.Toast
 import com.example.redditsample.adapter.RedditListAdapter
+import com.example.redditsample.manager.ConnectivityManager
 import com.example.redditsample.manager.RetrofitManager
 import com.example.redditsample.response.RedditResponse
 import com.example.redditsample.service.RedditService
@@ -17,15 +19,19 @@ import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 
-class MainViewModel constructor(private val context: Context, val adapter: RedditListAdapter, val compositeDisposable: CompositeDisposable) : BaseObservable() {
+class MainViewModel constructor(private val context: Context, val adapter: RedditListAdapter, val compositeDisposable: CompositeDisposable,
+                                private val connectivityManager: ConnectivityManager
+) : BaseObservable() {
 
     private val itemViewModelList: MutableList<MainItemViewModel> = ArrayList()
     private val BASE_URL = "https://www.reddit.com"
     var retrofitManager: RetrofitManager? = null
     var redditService: RedditService? = null
+    var isConnected: Boolean = false
 
     init {
         retrofitManager = RetrofitManager()
+        isConnected = connectivityManager.isConnectedToInternet(context)
     }
 
     private fun parseJsonResponse(response: RedditResponse) {
@@ -46,12 +52,16 @@ class MainViewModel constructor(private val context: Context, val adapter: Reddi
     fun loadData() {
         redditService = retrofitManager?.getRetrofitBuilderService(RedditService::class.java, BASE_URL) as RedditService
 
-        compositeDisposable.add(
-            redditService?.getTop("10")!!
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(this::parseJsonResponse, this::handleError)
-        )
+        if (isConnected) {
+            compositeDisposable.add(
+                redditService?.getTop("10")!!
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribeOn(Schedulers.io())
+                    .subscribe(this::parseJsonResponse, this::handleError)
+            )
+        } else {
+            Toast.makeText(context, "Looks like you are disconnected", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun handleError(error: Throwable) {
