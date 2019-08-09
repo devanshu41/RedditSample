@@ -31,7 +31,6 @@ class MainViewModel constructor(private val context: Context, val adapter: Reddi
 
     init {
         retrofitManager = RetrofitManager()
-        isConnected = connectivityManager.isConnectedToInternet(context)
     }
 
     private fun parseJsonResponse(response: RedditResponse) {
@@ -52,7 +51,7 @@ class MainViewModel constructor(private val context: Context, val adapter: Reddi
     fun loadData() {
         redditService = retrofitManager?.getRetrofitBuilderService(RedditService::class.java, BASE_URL) as RedditService
 
-        if (isConnected) {
+        if (connectivityManager.isConnectedToInternet(context)) {
             compositeDisposable.add(
                 redditService?.getTop("10")!!
                     .observeOn(AndroidSchedulers.mainThread())
