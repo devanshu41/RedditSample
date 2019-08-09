@@ -9,6 +9,7 @@ import android.util.Log
 import com.example.redditsample.adapter.RedditListAdapter
 import com.example.redditsample.databinding.ActivityMainBinding
 import com.example.redditsample.viewmodel.MainViewModel
+import io.reactivex.disposables.CompositeDisposable
 
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -17,11 +18,13 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var adapter: RedditListAdapter
     lateinit var viewModel: MainViewModel
+    lateinit var compositeDisposable: CompositeDisposable
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         adapter = RedditListAdapter()
-        viewModel = MainViewModel(this, adapter)
+        compositeDisposable = CompositeDisposable()
+        viewModel = MainViewModel(this, adapter, compositeDisposable)
         val binding: ActivityMainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main)
         binding.viewModel = viewModel
 
