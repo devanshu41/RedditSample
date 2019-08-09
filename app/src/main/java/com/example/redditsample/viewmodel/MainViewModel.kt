@@ -7,6 +7,7 @@ import android.content.Context
 import android.databinding.BaseObservable
 import android.util.Log
 import com.example.redditsample.adapter.RedditListAdapter
+import com.example.redditsample.manager.RetrofitManager
 import com.example.redditsample.response.RedditResponse
 import com.example.redditsample.service.RedditService
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -16,11 +17,16 @@ import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 
-class MainViewModel constructor(private val context: Context, val adapter: RedditListAdapter) : BaseObservable() {
+class MainViewModel constructor(private val context: Context, val adapter: RedditListAdapter, val compositeDisposable: CompositeDisposable) : BaseObservable() {
 
     private val itemViewModelList: MutableList<MainItemViewModel> = ArrayList()
     private val BASE_URL = "https://www.reddit.com"
-    private var compositeDisposable: CompositeDisposable? = null
+    var retrofitManager: RetrofitManager? = null
+    var redditService: RedditService? = null
+
+    init {
+        retrofitManager = RetrofitManager()
+    }
 
     private fun parseJsonResponse(response: RedditResponse) {
         itemViewModelList.clear()
@@ -38,21 +44,14 @@ class MainViewModel constructor(private val context: Context, val adapter: Reddi
     }
 
     fun loadData() {
+        redditService = retrofitManager?.getRetrofitBuilderService(RedditService::class.java, BASE_URL) as RedditService
 
-        val requestInterface = Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
-            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-            .build().create(RedditService::class.java)
-
-        compositeDisposable = CompositeDisposable()
-        compositeDisposable?.add(
-            requestInterface.getTop("10")
+        compositeDisposable.add(
+            redditService?.getTop("10")!!
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
                 .subscribe(this::parseJsonResponse, this::handleError)
         )
-
     }
 
     private fun handleError(error: Throwable) {
